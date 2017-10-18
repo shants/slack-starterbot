@@ -2,7 +2,41 @@ import os
 import time
 from slackclient import SlackClient
 import datetime
+
 #shants changes
+
+import re
+#import urllib2
+import requests
+
+class BookMyShowClient(object):
+    NOW_SHOWING_REGEX = '{"event":"productClick","ecommerce":{"currencyCode":"INR","click":{"actionField":{"list":"Filter Impression:category\\\/now showing"},"products":\[{"name":"(.*?)","id":"(.*?)","category":"(.*?)","variant":"(.*?)","position":(.*?),"dimension13":"(.*?)"}\]}}}'
+    #COMING_SOON_REGEX = '{"event":"productClick","ecommerce":{"currencyCode":"INR","click":{"actionField":{"list":"category\\\/coming soon"},"products":{"name":"(.*?)","id":"(.*?)","category":"(.*?)","variant":"(.*?)","position":(.*?),"dimension13":"(.*?)"}}}}'
+
+    def __init__(self, location = 'Bengaluru'):
+        self.__location = location.lower()
+        self.__url = "https://in.bookmyshow.com/%s/movies" % self.__location
+        self.__html = None
+
+    def __download(self):
+        req = requests.get(self.__url) 
+        #urllib2.Request(self.__url, headers={'User-Agent' : "Magic Browser"})
+        html = req.text #urllib2.urlopen(req).read()
+        return html
+
+    def get_now_showing(self):
+        if not self.__html:
+            self.__html = self.__download()
+            now_showing = re.findall(self.NOW_SHOWING_REGEX, self.__html)
+        return now_showing
+        #return self.__html
+
+    def get_coming_soon(self):
+        if not self.__html:
+            self.__html = self.__download()
+            coming_soon = re.findall(self.COMING_SOON_REGEX, self.__html)
+        return coming_soon
+
 
 # starterbot's ID as an environment variable
 BOT_ID = os.environ.get("BOT_ID")
@@ -27,6 +61,12 @@ def handle_command(command, channel):
         response = "Sure...write some more code then I can do that!"
     if "do day" in command:
 	    response = "Hello, the day is -- " +  datetime.date.today().strftime("%A") + ", " + datetime.date.today().strftime("%B") + " " + datetime.date.today().strftime("%d") 
+    if "do movie" in command:
+	    bms_client = BookMyShowClient('Bengaluru')
+	    now_showing = bms_client.get_now_showing()
+	    response = "Hello, Movie list in Bengaluru == "
+	    for m in now_showing:
+	        response +=str(m)
     slack_client.api_call("chat.postMessage", channel=channel,
                           text=response, as_user=True)
 
