@@ -2,7 +2,8 @@ import os
 import time
 from slackclient import SlackClient
 import datetime
-
+from PyDictionary import PyDictionary
+import json
 #shants changes
 
 import re
@@ -60,13 +61,22 @@ def handle_command(command, channel):
     if command.startswith(EXAMPLE_COMMAND):
         response = "Sure...write some more code then I can do that!"
     if "do day" in command:
-	    response = "Hello, the day is -- " +  datetime.date.today().strftime("%A") + ", " + datetime.date.today().strftime("%B") + " " + datetime.date.today().strftime("%d") 
+        response = "Hello, the day is -- " +  datetime.date.today().strftime("%A") + ", " + datetime.date.today().strftime("%B") + " " + datetime.date.today().strftime("%d") 
     if "do movie" in command:
-	    bms_client = BookMyShowClient('Bengaluru')
-	    now_showing = bms_client.get_now_showing()
-	    response = "Hello, Movie list in Bengaluru == "
-	    for m in now_showing:
-	        response +=str(m)
+        bms_client = BookMyShowClient('Bengaluru')
+        now_showing = bms_client.get_now_showing()
+        response = "Movie list in Bengaluru == \n"
+        for m in now_showing:
+            response +=str(m[0] + '-' + m[5] + "\n")
+
+    if "do dict" in command:
+        response = "Welcome to dictionary\n"	    
+        #dictionary=PyDictionary()
+        cmd = command.split(" ")
+        dict_word = cmd[2]
+        dictionary=PyDictionary()
+        response += dict_word + " means : " + json.dumps(dictionary.meaning(dict_word))
+
     slack_client.api_call("chat.postMessage", channel=channel,
                           text=response, as_user=True)
 
